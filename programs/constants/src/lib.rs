@@ -6,6 +6,7 @@ pub mod errors;
 pub mod instructions;
 pub mod state;
 
+use constants::*;
 use instructions::*;
 use state::*;
 
@@ -15,8 +16,8 @@ declare_id!("AmyqnALuxM2KCixrz5ZpJdZYjN21SZm2Lv3GruCMP5Nk"); // Replace with you
 pub mod token_locker_program {
     use super::*;
 
-    pub fn lock_token(ctx: Context<LockToken>, amount: u64, lock_duration: i64) -> Result<()> {
-        instructions::lock_token::handler(ctx, amount, lock_duration)
+    pub fn lock_token(ctx: Context<LockToken>, amount: u64, lock_duration: i64, is_early_withdrawal_enabled: bool) -> Result<()> {
+        instructions::lock_token::handler(ctx, amount, lock_duration, is_early_withdrawal_enabled)
     }
 
     pub fn unlock_token(ctx: Context<UnlockToken>) -> Result<()> {

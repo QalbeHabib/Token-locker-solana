@@ -7,6 +7,7 @@ use crate::{constants::*, errors::*, state::*};
 
 // Instruction: LockToken
 #[derive(Accounts)]
+#[instruction(amount: u64, lock_duration: i64, is_early_withdrawal_enabled: bool)]
 pub struct LockToken<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -17,20 +18,16 @@ pub struct LockToken<'info> {
     #[account(
         init_if_needed,
         payer = owner,
-        space = 8 + std::mem::size_of::<LockInfo>(),
-        seeds = [
-            LOCKER_SEED,
-            owner.key().as_ref(),
-            token_mint.key().as_ref(),
-        ],
-        bump,
+        space = 8 + LockInfo::SPACE,
+        seeds = [LOCKER_SEED, owner.key().as_ref(), token_mint.key().as_ref()],
+        bump
     )]
     pub lock_info: Account<'info, LockInfo>,
 
     #[account(
         mut,
         associated_token::mint = token_mint,
-        associated_token::authority = owner,
+        associated_token::authority = owner
     )]
     pub owner_token_account: InterfaceAccount<'info, TokenAccount>,
 
@@ -38,28 +35,26 @@ pub struct LockToken<'info> {
         init_if_needed,
         payer = owner,
         associated_token::mint = token_mint,
-        associated_token::authority = lock_info,
+        associated_token::authority = lock_info
     )]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         init_if_needed,
         payer = owner,
-        space = 8 + std::mem::size_of::<UserInfo>(),
-        seeds = [
-            USER_INFO_SEED,
-            owner.key().as_ref(),
-        ],
-        bump,
+        space = 8 + UserInfo::SPACE,
+        seeds = [USER_INFO_SEED, owner.key().as_ref()],
+        bump
     )]
     pub user_info: Account<'info, UserInfo>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<LockToken>, amount: u64, lock_duration: i64) -> Result<()> {
+pub fn handler(ctx: Context<LockToken>, amount: u64, lock_duration: i64, is_early_withdrawal_enabled: bool) -> Result<()> {
     // Validate inputs
     require!(amount > 0, TokenLockerError::InvalidAmount);
     require!(
@@ -81,7 +76,7 @@ pub fn handler(ctx: Context<LockToken>, amount: u64, lock_duration: i64) -> Resu
         lock_info.token_mint = ctx.accounts.token_mint.key();
         lock_info.amount = 0; // Will be updated below
         lock_info.bump = ctx.bumps.lock_info;
-        lock_info.is_early_withdrawal_enabled = true;
+        lock_info.is_early_withdrawal_enabled = is_early_withdrawal_enabled;
     }
 
     // Validate owner

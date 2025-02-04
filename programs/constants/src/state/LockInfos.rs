@@ -9,4 +9,15 @@ pub struct LockInfo {
     pub lock_end_time: i64,           // When the tokens can be unlocked
     pub is_early_withdrawal_enabled: bool, // Whether early withdrawal is enabled
     pub bump: u8,                     // PDA bump
+}
+
+impl LockInfo {
+    pub const SPACE: usize = 8 +  // discriminator
+        32 +    // owner
+        32 +    // token_mint
+        8 +     // amount
+        8 +     // lock_start_time
+        8 +     // lock_end_time
+        1 +     // is_early_withdrawal_enabled
+        1;      // bump
 } 
